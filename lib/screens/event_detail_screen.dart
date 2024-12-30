@@ -24,12 +24,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          AddEditEventScreen(event: widget.event)));
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddEditEventScreen(event: widget.event),
+                ),
+              );
+              // Refresh the screen if we got back a result
+              if (result == true && mounted) {
+                setState(() {});
+              }
             },
           ),
           IconButton(
@@ -40,91 +45,139 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            Text(
-              widget.event.title,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+      body: FutureBuilder<Event>(
+          future: DatabaseHelper.instance.readEvent(widget.event.id!),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            final event = snapshot.data ?? widget.event;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    widget.event.title,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-            // Date and Time
-            _buildDetailRow(
-              context,
-              icon: Icons.calendar_today,
-              label: 'Date',
-              value: DateFormat('EEEE, MMMM d, yyyy').format(widget.event.date),
-            ),
-            _buildDetailRow(
-              context,
-              icon: Icons.access_time,
-              label: 'Time',
-              value: '${DateFormat('h:mm a').format(widget.event.startTime)} - '
-                  '${DateFormat('h:mm a').format(widget.event.endTime)}',
-            ),
+                  // Date and Time
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.calendar_today,
+                    label: 'Date',
+                    value: DateFormat('EEEE, MMMM d, yyyy').format(event.date),
+                  ),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.access_time,
+                    label: 'Time',
+                    value:
+                        '${DateFormat('h:mm a').format(widget.event.startTime)} - '
+                        '${DateFormat('h:mm a').format(widget.event.endTime)}',
+                  ),
 
-            // Location (if available)
-            if (widget.event.location != null &&
-                widget.event.location!.isNotEmpty)
-              _buildDetailRow(
-                context,
-                icon: Icons.location_on,
-                label: 'Location',
-                value: widget.event.location!,
-              ),
+                  // Location (if available)
+                  if (event.location != null && event.location!.isNotEmpty)
+                    _buildDetailRow(
+                      context,
+                      icon: Icons.location_on,
+                      label: 'Location',
+                      value: widget.event.location!,
+                    ),
 
-            // Description (if available)
-            if (widget.event.description != null &&
-                widget.event.description!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  // Description (if available)
+                  if (event.description != null &&
+                      event.description!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Description',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.event.description!,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (event.todos.isNotEmpty) ...[
+                    const SizedBox(height: 16),
                     Text(
-                      'Description',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      'Todo List',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      widget.event.description!,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: event.todos.length,
+                      itemBuilder: (context, index) {
+                        final todo = event.todos[index];
+                        return CheckboxListTile(
+                          title: Text(todo.task),
+                          value: todo.completed,
+                          onChanged: (bool? value) async {
+                            if (value != null) {
+                              final updatedTodo =
+                                  todo.copyWith(completed: value);
+                              await DatabaseHelper.instance
+                                  .updateTodo(updatedTodo);
+                              setState(() {});
+                            }
+                          },
+                        );
+                      },
                     ),
                   ],
-                ),
+                  // Completion Status
+                  Consumer<EventProvider>(
+                    builder: (context, eventProvider, child) {
+                      // Find the specific event by its ID
+                      final updatedEvent = eventProvider.events.firstWhere(
+                        (e) => e.id == widget.event.id,
+                        // Use the original event if not found (fallback)
+                        orElse: () => widget.event,
+                      );
+                      return SwitchListTile(
+                        title: const Text('Mark as Completed'),
+                        value: updatedEvent.completed,
+                        onChanged: (bool value) {
+                          // Update event completion status
+                          Provider.of<EventProvider>(context, listen: false)
+                              .updateEvent(
+                                  updatedEvent.copyWith(completed: value));
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
-
-            // Completion Status
-            Consumer<EventProvider>(
-              builder: (context, eventProvider, child) {
-                // Find the specific event by its ID
-                final updatedEvent = eventProvider.events.firstWhere(
-                  (e) => e.id == widget.event.id,
-                  // Use the original event if not found (fallback)
-                  orElse: () => widget.event,
-                );
-                return SwitchListTile(
-                  title: const Text('Mark as Completed'),
-                  value: updatedEvent.completed,
-                  onChanged: (bool value) {
-                    // Update event completion status
-                    Provider.of<EventProvider>(context, listen: false)
-                        .updateEvent(updatedEvent.copyWith(completed: value));
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+            );
+          }),
     );
   }
 

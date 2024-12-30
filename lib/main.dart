@@ -8,7 +8,8 @@ import 'utils/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService().init();
+  final notificationService = NotificationService();
+  await notificationService.initialize();
   runApp(
     MultiProvider(
       providers: [

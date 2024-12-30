@@ -1,5 +1,6 @@
 import 'package:calendar_app/database/database_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/event_provider.dart';
@@ -20,11 +21,11 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   // ignore: unused_field
-  List<Event> _selectedEvents = [];
 
   @override
   void initState() {
     super.initState();
+    _selectedDay = _focusedDay; // Initialize selected day
     // Fetch events when the screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<EventProvider>(context, listen: false).fetchEvents();
@@ -39,6 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
             event.date.month == day.month &&
             event.date.day == day.day)
         .toList();
+  }
+
+  String _formatTime(DateTime time) {
+    final formatter =
+        DateFormat('h:mm a'); // This will format time as "1:30 PM"
+    return formatter.format(time);
   }
 
   @override
@@ -73,8 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() {
                       _selectedDay = selectedDay;
                       _focusedDay = focusedDay;
-                      _selectedEvents =
-                          _getEventsForDay(selectedDay, eventProvider.events);
                     });
                   }
                 },
@@ -95,48 +100,100 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Events List for Selected Day
               Expanded(
-                child: Consumer<EventProvider>(
-                  builder: (context, eventProvider, child) {
-                    // Use the provider's events list instead of _selectedEvents
-                    final displayEvents = eventProvider.events
-                        .where((e) => isSameDay(e.date, _selectedDay))
-                        .toList();
+                child: Builder(
+                  builder: (context) {
+                    if (_selectedDay == null) return const SizedBox.shrink();
 
-                    return displayEvents.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No events for this day',
-                              style: Theme.of(context).textTheme.labelSmall,
+                    final eventsForDay = _getEventsForDay(
+                      _selectedDay!,
+                      eventProvider.events,
+                    );
+
+                    if (eventsForDay.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No events for ${DateFormat('MMMM d, yyyy').format(_selectedDay!)}',
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: eventsForDay.length,
+                      itemBuilder: (context, index) {
+                        final event = eventsForDay[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              event.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                decoration: event.completed
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
                             ),
-                          )
-                        : ListView.builder(
-                            itemCount: displayEvents.length,
-                            itemBuilder: (context, index) {
-                              final event = displayEvents[index];
-                              return ListTile(
-                                title: Text(event.title),
-                                subtitle: Text(
-                                    '${event.startTime.hour}:${event.startTime.minute} - '
-                                    '${event.endTime.hour}:${event.endTime.minute}'),
-                                trailing: Checkbox(
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${_formatTime(event.startTime)} - ${_formatTime(event.endTime)}',
+                                ),
+                                if (event.location != null &&
+                                    event.location!.isNotEmpty)
+                                  Text(
+                                    '📍 ${event.location}',
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (event.todos.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: Text(
+                                      '${event.todos.where((todo) => todo.completed).length}/${event.todos.length}',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ),
+                                Checkbox(
                                   value: event.completed,
-                                  onChanged: (bool? value) {
-                                    // Toggle event completion
+                                  onChanged: (bool? value) async {
                                     final updatedEvent = event.copyWith(
-                                        completed: value ?? false);
-                                    eventProvider.updateEvent(updatedEvent);
+                                      completed: value ?? false,
+                                    );
+                                    await eventProvider
+                                        .updateEvent(updatedEvent);
                                   },
                                 ),
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              EventDetailScreen(event: event)));
-                                },
-                              );
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EventDetailScreen(
+                                    event: event,
+                                  ),
+                                ),
+                              ).then((_) {
+                                // Refresh events when returning from details
+                                eventProvider.fetchEvents();
+                              });
                             },
-                          );
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -148,9 +205,14 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.add),
         onPressed: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const AddEditEventScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddEditEventScreen(),
+            ),
+          ).then((_) {
+            // Refresh events when returning from add screen
+            Provider.of<EventProvider>(context, listen: false).fetchEvents();
+          });
         },
       ),
     );
