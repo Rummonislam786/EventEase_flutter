@@ -44,6 +44,18 @@ class DatabaseHelper {
     ''');
 
     // Create events table
+    // await db.execute('''
+    //   CREATE TABLE events (
+    //     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //     title TEXT NOT NULL,
+    //     description TEXT,
+    //     date TEXT NOT NULL,
+    //     start_time TEXT NOT NULL,
+    //     end_time TEXT NOT NULL,
+    //     location TEXT,
+    //     completed INTEGER DEFAULT 0
+    //   )
+    // ''');
     await db.execute('''
       CREATE TABLE events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,11 +64,9 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         start_time TEXT NOT NULL,
         end_time TEXT NOT NULL,
-        location TEXT,
         completed INTEGER DEFAULT 0
       )
     ''');
-
     // Create todos table
     await db.execute('''
       CREATE TABLE todos (
@@ -298,7 +308,7 @@ extension EventExtension on Event {
     DateTime? date,
     DateTime? startTime,
     DateTime? endTime,
-    String? location,
+    // String? location,
     bool? completed,
   }) {
     return Event(
@@ -308,7 +318,7 @@ extension EventExtension on Event {
       date: date ?? this.date,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
-      location: location ?? this.location,
+      // location: location ?? this.location,
       completed: completed ?? this.completed,
     );
   }

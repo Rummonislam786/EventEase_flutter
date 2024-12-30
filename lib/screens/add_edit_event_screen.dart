@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:calendar_app/database/database_helper.dart';
 import 'package:calendar_app/utils/notification_service.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _locationController = TextEditingController();
+  // final _locationController = TextEditingController();
   final _todoController = TextEditingController();
 
   late DateTime _selectedDate;
@@ -36,7 +38,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
       // Edit mode - populate fields
       _titleController.text = widget.event!.title;
       _descriptionController.text = widget.event!.description ?? '';
-      _locationController.text = widget.event!.location ?? '';
+      // _locationController.text = widget.event!.location ?? '';
       _selectedDate = widget.event!.date;
       _startTime = TimeOfDay.fromDateTime(widget.event!.startTime);
       _endTime = TimeOfDay.fromDateTime(widget.event!.endTime);
@@ -65,7 +67,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
+    // _locationController.dispose();
     _todoController.dispose();
     super.dispose();
   }
@@ -217,7 +219,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
       date: _selectedDate,
       startTime: startDateTime,
       endTime: endDateTime,
-      location: _locationController.text,
+      // location: _locationController.text,
       todos: _todos,
       completed: widget.event?.completed ?? false,
     );
@@ -227,15 +229,15 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
           ? await DatabaseHelper.instance.create(event)
           : await DatabaseHelper.instance.update(event) as Event;
 
-      await NotificationService().scheduleEventNotification(
-        id: savedEvent.id!,
-        title: 'Upcoming Event: ${savedEvent.title}',
-        body: savedEvent.location != null
-            ? 'at ${savedEvent.location}'
-            : 'Starting soon',
-        eventTime: savedEvent.startTime,
-        reminderBefore: const Duration(minutes: 15),
-      );
+      // await NotificationService().scheduleEventNotification(
+      //   id: savedEvent.id!,
+      //   title: 'Upcoming Event: ${savedEvent.title}',
+      //   body: savedEvent.location != null
+      //       ? 'at ${savedEvent.location}'
+      //       : 'Starting soon',
+      //   eventTime: savedEvent.startTime,
+      //   reminderBefore: const Duration(minutes: 15),
+      // );
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -358,14 +360,14 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _locationController,
-              decoration: const InputDecoration(
-                labelText: 'Location',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            // const SizedBox(height: 16),
+            // TextFormField(
+            //   controller: _locationController,
+            //   decoration: const InputDecoration(
+            //     labelText: 'Location',
+            //     border: OutlineInputBorder(),
+            //   ),
+            // ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,

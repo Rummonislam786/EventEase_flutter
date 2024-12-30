@@ -8,8 +8,8 @@ import 'utils/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final notificationService = NotificationService();
-  await notificationService.initialize();
+  // final notificationService = NotificationService();
+  // await notificationService.initialize();
   runApp(
     MultiProvider(
       providers: [
@@ -18,18 +18,18 @@ void main() async {
       child: const OfflineCalendarApp(),
     ),
   );
-  testNotification();
+  // testNotification();
 }
 
-void testNotification() {
-  NotificationService().scheduleEventNotification(
-    id: 1, // Unique ID for the notification
-    title: 'Test Notification',
-    body: 'This is a test notification to check if notifications are working',
-    eventTime: DateTime.now()
-        .add(const Duration(seconds: 10)), // Trigger after 10 seconds
-  );
-}
+// void testNotification() {
+//   NotificationService().scheduleEventNotification(
+//     id: 1, // Unique ID for the notification
+//     title: 'Test Notification',
+//     body: 'This is a test notification to check if notifications are working',
+//     eventTime: DateTime.now()
+//         .add(const Duration(seconds: 10)), // Trigger after 10 seconds
+//   );
+// }
 
 class OfflineCalendarApp extends StatelessWidget {
   const OfflineCalendarApp({super.key});

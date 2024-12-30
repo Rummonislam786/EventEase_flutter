@@ -89,13 +89,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
 
                   // Location (if available)
-                  if (event.location != null && event.location!.isNotEmpty)
-                    _buildDetailRow(
-                      context,
-                      icon: Icons.location_on,
-                      label: 'Location',
-                      value: widget.event.location!,
-                    ),
+                  // if (event.location != null && event.location!.isNotEmpty)
+                  //   _buildDetailRow(
+                  //     context,
+                  //     icon: Icons.location_on,
+                  //     label: 'Location',
+                  //     value: widget.event.location!,
+                  //   ),
 
                   // Description (if available)
                   if (event.description != null &&

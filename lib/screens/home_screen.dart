@@ -146,12 +146,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Text(
                                   '${_formatTime(event.startTime)} - ${_formatTime(event.endTime)}',
                                 ),
-                                if (event.location != null &&
-                                    event.location!.isNotEmpty)
-                                  Text(
-                                    '📍 ${event.location}',
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
+                                // if (event.location != null &&
+                                //     event.location!.isNotEmpty)
+                                //   Text(
+                                //     '📍 ${event.location}',
+                                //     style: TextStyle(color: Colors.grey[600]),
+                                //   ),
                               ],
                             ),
                             trailing: Row(
